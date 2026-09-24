@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from fastapi import Depends
-
 from ..core.config import get_settings
-from ..graph.graph import build_graph
+from ..crew.crew import build_crew
 from ..services.document_service import DocumentService
 from ..storage.local import LocalDocumentStorage
 
@@ -17,5 +15,14 @@ def get_document_service() -> DocumentService:
     return DocumentService(storage=storage)
 
 
-def get_agent_graph():
-    return build_graph()
+def get_agent_crew(
+    user_query: str = "",
+    document_id: str | None = None,
+    document_text: str | None = None,
+):
+    """Dependency factory: build a fresh CrewAI Crew for each request."""
+    return build_crew(
+        user_query=user_query,
+        document_id=document_id,
+        document_text=document_text,
+    )

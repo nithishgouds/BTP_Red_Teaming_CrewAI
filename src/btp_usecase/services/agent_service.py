@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..graph.graph import build_graph
+from ..crew.crew import run_crew
 from ..services.extraction_service import ExtractionService
 from ..storage.base import DocumentStorage
 
@@ -9,7 +9,6 @@ class AgentService:
     def __init__(self, storage: DocumentStorage, extraction_service: ExtractionService | None = None):
         self.storage = storage
         self.extraction_service = extraction_service or ExtractionService()
-        self.graph = build_graph()
 
     def _detect_file_type(self, document_id: str, raw: bytes | None = None) -> str:
         if raw is not None:
@@ -46,28 +45,8 @@ class AgentService:
             extracted = self.extraction_service.extract(file_type, raw)
             document_text = extracted.text or ""
 
-        state = {
-            "user_query": user_query,
-            "document_id": document_id,
-            "document_text": document_text,
-            "retrieved_context": [],
-            "messages": [],
-            "intermediate_results": {},
-            "final_response": None,
-        }
-
-        result = self.graph.invoke(state)
-        intermediate = result.get("intermediate_results", {})
-        if isinstance(intermediate, dict) and "llm" in intermediate:
-            intermediate["llm"] = {
-                "provider": intermediate["llm"].get("provider"),
-                "model": intermediate["llm"].get("model"),
-                "response": intermediate["llm"].get("response"),
-            }
-
-        return {
-            "document_id": document_id,
-            "final_response": result.get("final_response"),
-            "messages": result.get("messages", []),
-            "intermediate_results": intermediate,
-        }
+        return run_crew(
+            user_query=user_query,
+            document_id=document_id,
+            document_text=document_text,
+        )
